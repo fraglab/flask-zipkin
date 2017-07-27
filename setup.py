@@ -1,16 +1,9 @@
-import os
-
 from setuptools import setup
 
-module_path = os.path.join(os.path.dirname(__file__), 'flask_zipkin.py')
-version_line = [line for line in open(module_path)
-                if line.startswith('__version_info__')][0]
-
-__version__ = '.'.join(eval(version_line.split('__version_info__ = ')[-1]))
 
 setup(
     name='fl-flask-zipkin',
-    version=__version__,
+    version='0.0.4',
     url='',
     license='BSD',
     author='killpanda',
