@@ -80,3 +80,7 @@ zipkin.logging(id=1, user_id=2)
 `ZIPKIN_DISABLE`  disable zipkin tracking if value is `True`
 
 `ZIPKIN_DSN`  http transport dsn: such as `http://localhost:9411/api/v1/spans`
+
+`ZIPKIN_SAMPLE_RATE` traced requests percentage from 0 to 100
+
+`ZIPKIN_IGNORED_ENDPOINTS` list of endpoints that should not be traced, e.g. `["static"]`
