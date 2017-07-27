@@ -8,20 +8,22 @@ from py_zipkin.util import generate_random_64bit_string
 class Zipkin:
     def __init__(self, app=None):
         self.app = app
+
         self._disable = False
         self._ignored_endpoints = set()
         self._sample_rate = 100
+        self._transport_handler = self.default_handler
+        self._transport_exception_handler = self.default_exception_handler
+
         if app is not None:
             self.init_app(app)
-        self._transport_handler = None
-        self._transport_exception_handler = None
 
     def default_exception_handler(self, ex):
         pass
 
     def default_handler(self, encoded_span):
         try:
-            body = str.encode('\x0c\x00\x00\x00\x01') + encoded_span
+            body = b'\x0c\x00\x00\x00\x01' + encoded_span
             return requests.post(
                 self.app.config.get('ZIPKIN_DSN'),
                 data=body,
@@ -29,10 +31,7 @@ class Zipkin:
                 timeout=1,
             )
         except Exception as e:
-            if self._transport_exception_handler:
-                self._transport_exception_handler(e)
-            else:
-                self.default_exception_handler(e)
+            self._transport_exception_handler(e)
 
     def transport_handler(self, callback):
         self._transport_handler = callback
@@ -72,12 +71,10 @@ class Zipkin:
             is_sampled=is_sampled,
         )
 
-        handler = self._transport_handler or self.default_handler
-
         span = zipkin.zipkin_span(
             service_name=self.app.name,
             span_name='{0}.{1}'.format(request.endpoint, request.method),
-            transport_handler=handler,
+            transport_handler=self._transport_handler,
             sample_rate=self._sample_rate,
             zipkin_attrs=zipkin_attrs
         )
