@@ -1,4 +1,4 @@
-from flask import g, request, current_app
+from flask import g, request
 
 import requests
 from py_zipkin import zipkin
@@ -9,7 +9,7 @@ class Zipkin:
     def __init__(self, app=None):
         self.app = app
         self._disable = False
-        self._exempt_views = set()
+        self._ignored_endpoints = set()
         self._sample_rate = 100
         if app is not None:
             self.init_app(app)
@@ -44,23 +44,20 @@ class Zipkin:
 
     def init_app(self, app):
         self.app = app
+
         app.before_request(self._before_request)
         app.after_request(self._after_request)
+
         self._disable = app.config.get('ZIPKIN_DISABLE', app.config.get('TESTING', False))
         self._sample_rate = app.config.get('ZIPKIN_SAMPLE_RATE', 100)
+        self._ignored_endpoints.update(app.config.get('ZIPKIN_IGNORED_ENDPOINTS', []))
+
         return self
 
-    def _should_use_token(self, view_func):
-        return view_func not in self._exempt_views
-
     def _before_request(self):
-        if self._disable:
+        if self._disable or request.endpoint in self._ignored_endpoints:
             return
 
-        current_app._view_func = current_app.view_functions.get(request.endpoint)
-
-        if not self._should_use_token(current_app._view_func):
-            return
         headers = request.headers
         trace_id = headers.get('X-B3-TraceId') or generate_random_64bit_string()
         parent_span_id = headers.get('X-B3-Parentspanid')
@@ -86,11 +83,6 @@ class Zipkin:
         )
         g.zipkin_span = span
         g.zipkin_span.start()
-
-    def exempt(self, view):
-        view_location = '{0}.{1}'.format(view.__module__, view.__name__)
-        self._exempt_views.add(view_location)
-        return view
 
     def _after_request(self, response):
         if not self._disable and hasattr(g, 'zipkin_span'):
