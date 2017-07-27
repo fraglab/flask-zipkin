@@ -10,6 +10,7 @@ class Zipkin:
         self.app = app
 
         self._disable = False
+        self._exempt_views = set()
         self._ignored_endpoints = set()
         self._sample_rate = 100
         self._transport_handler = self.default_handler
@@ -57,6 +58,10 @@ class Zipkin:
         if self._disable or request.endpoint in self._ignored_endpoints:
             return
 
+        view_func = self.app.view_functions.get(request.endpoint)
+        if view_func in self._exempt_views:
+            return
+
         headers = request.headers
         trace_id = headers.get('X-B3-TraceId') or generate_random_64bit_string()
         parent_span_id = headers.get('X-B3-Parentspanid')
@@ -80,6 +85,10 @@ class Zipkin:
         )
         g.zipkin_span = span
         g.zipkin_span.start()
+
+    def exempt(self, view):
+        self._exempt_views.add(view)
+        return view
 
     def _after_request(self, response):
         if not self._disable and hasattr(g, 'zipkin_span'):
