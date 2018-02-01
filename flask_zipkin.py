@@ -15,6 +15,7 @@ class Zipkin:
         self._sample_rate = 100
         self._transport_handler = self.default_handler
         self._transport_exception_handler = self.default_exception_handler
+        self._binary_annotations = {}
 
         if app is not None:
             self.init_app(app)
@@ -51,6 +52,7 @@ class Zipkin:
         self._disable = app.config.get('ZIPKIN_DISABLE', app.config.get('TESTING', False))
         self._sample_rate = app.config.get('ZIPKIN_SAMPLE_RATE', 100)
         self._ignored_endpoints.update(app.config.get('ZIPKIN_IGNORED_ENDPOINTS', []))
+        self._binary_annotations.update(app.config.get('ZIPKIN_BINARY_ANNOTATIONS', {}))
 
         return self
 
@@ -81,7 +83,8 @@ class Zipkin:
             span_name='{0}.{1}'.format(request.endpoint, request.method),
             transport_handler=self._transport_handler,
             sample_rate=self._sample_rate,
-            zipkin_attrs=zipkin_attrs
+            zipkin_attrs=zipkin_attrs,
+            binary_annotations=self._binary_annotations
         )
         g.zipkin_span = span
         g.zipkin_span.start()
