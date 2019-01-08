@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='fl-flask-zipkin',
-    version='0.0.9',
+    version='0.0.10',
     url='',
     license='BSD',
     author='killpanda',
