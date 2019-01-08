@@ -2,7 +2,7 @@ from flask import g, request
 
 import requests
 from py_zipkin import zipkin
-from py_zipkin.util import generate_random_128bit_string
+from py_zipkin.util import generate_random_128bit_string, generate_random_64bit_string
 
 
 class Zipkin:
@@ -66,7 +66,7 @@ class Zipkin:
 
         headers = request.headers
         trace_id = headers.get('X-B3-TraceId') or generate_random_128bit_string()
-        span_id = headers.get('X-B3-SpanId')
+        span_id = headers.get('X-B3-SpanId') or generate_random_64bit_string()
         parent_span_id = headers.get('X-B3-Parentspanid')
         is_sampled = str(headers.get('X-B3-Sampled') or '0') == '1'
         flags = headers.get('X-B3-Flags')
